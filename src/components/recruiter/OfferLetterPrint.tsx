@@ -1,7 +1,7 @@
-import { forwardRef } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 
 interface OfferLetterPrintProps {
-  generateOfferLetterHTML: () => JSX.Element;
+  generateOfferLetterHTML: () => ReactNode;
 }
 
 export const OfferLetterPrint = forwardRef<HTMLDivElement, OfferLetterPrintProps>(
