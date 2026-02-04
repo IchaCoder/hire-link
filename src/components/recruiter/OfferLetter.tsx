@@ -1,13 +1,13 @@
-'use client';
-
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { useHireLinkContext, type Application } from '@/contexts';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { X, Download, Send } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Download, Send } from 'lucide-react';
+import { OfferLetterForm } from './OfferLetterForm';
+import { OfferLetterPreview } from './OfferLetterPreview';
+import { OfferLetterPrint } from './OfferLetterPrint';
+import { OfferLetterSuccess } from './OfferLetterSuccess';
 
 interface OfferLetterProps {
   application: Application;
@@ -16,6 +16,7 @@ interface OfferLetterProps {
 
 export default function OfferLetter({ application, onClose }: OfferLetterProps) {
   const { moveApplicationStage } = useHireLinkContext();
+  const contentRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({
     jobTitle: '',
     department: 'Engineering',
@@ -23,26 +24,51 @@ export default function OfferLetter({ application, onClose }: OfferLetterProps) 
     startDate: '',
     benefits: 'Health Insurance, 401(k), Remote Work Options, Professional Development',
   });
+  const [errors, setErrors] = useState({
+    jobTitle: '',
+    salary: '',
+    startDate: '',
+  });
   const [sent, setSent] = useState(false);
 
+  const handlePrint = useReactToPrint({
+    contentRef,
+    documentTitle: `offer_${application.candidateName}`,
+  });
+
   const handleSendOffer = () => {
-    if (!formData.jobTitle || !formData.salary || !formData.startDate) {
-      alert('Please fill in all required fields');
+    const newErrors = {
+      jobTitle: '',
+      salary: '',
+      startDate: '',
+    };
+
+    if (!formData.jobTitle.trim()) {
+      newErrors.jobTitle = 'Job title is required';
+    }
+
+    if (!formData.salary.trim()) {
+      newErrors.salary = 'Salary is required';
+    } else if (parseFloat(formData.salary) <= 0) {
+      newErrors.salary = 'Salary must be greater than 0';
+    }
+
+    if (!formData.startDate) {
+      newErrors.startDate = 'Start date is required';
+    }
+
+    setErrors(newErrors);
+
+    if (newErrors.jobTitle || newErrors.salary || newErrors.startDate) {
       return;
     }
+
     moveApplicationStage(application.id, 'Offer Sent');
     setSent(true);
   };
 
   const handleDownload = () => {
-    const letterContent = generateOfferLetterText();
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(letterContent));
-    element.setAttribute('download', `offer_${application.candidateName}.txt`);
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    handlePrint();
   };
 
   const generateOfferLetterText = (): string => {
@@ -87,125 +113,118 @@ Sincerely,
 Human Resources Department`;
   };
 
-  if (sent) {
+  const generateOfferLetterHTML = () => {
+    const today = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
     return (
-      <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
-        <Card className='w-full max-w-md p-6 space-y-4'>
-          <div className='text-center space-y-3'>
-            <div className='w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto'>
-              <Send className='h-6 w-6 text-accent' />
-            </div>
-            <h3 className='text-lg font-bold text-foreground'>Offer Sent Successfully</h3>
-            <p className='text-sm text-muted-foreground'>
-              The offer letter has been sent to {application.email}. The candidate's status has been updated to "Offer
-              Sent".
-            </p>
-          </div>
+      <div style={{ lineHeight: '1.6', color: '#000' }}>
+        <h1 style={{ fontSize: '24px', marginBottom: '20px', textAlign: 'center' }}>OFFER LETTER</h1>
 
-          <div className='bg-secondary/30 rounded p-3 text-xs text-muted-foreground space-y-1'>
-            <p className='font-medium text-foreground'>Next Steps:</p>
-            <ul className='list-disc list-inside space-y-1'>
-              <li>Candidate will review the offer</li>
-              <li>Follow up within 5 business days</li>
-              <li>Coordinate onboarding once accepted</li>
-            </ul>
-          </div>
+        <p style={{ marginBottom: '20px' }}>
+          <strong>Date:</strong> {today}
+        </p>
 
-          <Button onClick={onClose} className='w-full'>
-            Close
-          </Button>
-        </Card>
+        <p style={{ marginBottom: '20px' }}>Dear {application.candidateName},</p>
+
+        <p style={{ marginBottom: '20px' }}>
+          We are pleased to extend an offer for the position of <strong>{formData.jobTitle}</strong> at our
+          organization.
+        </p>
+
+        <div style={{ marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', marginBottom: '10px' }}>POSITION DETAILS:</h2>
+          <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
+            <li style={{ marginBottom: '5px' }}>• Position: {formData.jobTitle}</li>
+            <li style={{ marginBottom: '5px' }}>• Department: {formData.department}</li>
+            <li style={{ marginBottom: '5px' }}>• Start Date: {formData.startDate}</li>
+            <li style={{ marginBottom: '5px' }}>• Compensation: ${formData.salary} per year</li>
+          </ul>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', marginBottom: '10px' }}>BENEFITS:</h2>
+          <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
+            {formData.benefits.split(',').map((benefit, index) => (
+              <li key={index} style={{ marginBottom: '5px' }}>
+                • {benefit.trim()}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p style={{ marginBottom: '20px' }}>
+          We are excited about the possibility of you joining our team. Your qualifications and experience make you an
+          ideal candidate for this role.
+        </p>
+
+        <div style={{ marginBottom: '20px' }}>
+          <p style={{ marginBottom: '10px' }}>This offer is contingent upon:</p>
+          <ol style={{ paddingLeft: '20px' }}>
+            <li style={{ marginBottom: '5px' }}>Successful background check</li>
+            <li style={{ marginBottom: '5px' }}>Verification of educational credentials</li>
+            <li style={{ marginBottom: '5px' }}>Reference checks</li>
+          </ol>
+        </div>
+
+        <p style={{ marginBottom: '20px' }}>
+          Please confirm your acceptance of this offer by replying to this email within 5 business days.
+        </p>
+
+        <p style={{ marginBottom: '20px' }}>
+          If you have any questions or require clarification, please do not hesitate to contact us.
+        </p>
+
+        <p style={{ marginTop: '40px' }}>
+          Sincerely,
+          <br />
+          Human Resources Department
+        </p>
       </div>
     );
+  };
+
+  if (sent) {
+    return <OfferLetterSuccess application={application} onClose={onClose} />;
   }
 
   return (
-    <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto'>
-      <Card className='w-full max-w-2xl p-6 space-y-4 my-8'>
-        <div className='flex items-center justify-between'>
-          <h3 className='text-lg font-bold text-foreground'>Draft Offer Letter</h3>
-          <button onClick={onClose} className='p-1 hover:bg-secondary rounded'>
-            <X className='h-5 w-5' />
-          </button>
-        </div>
+    <Sheet open={true} onOpenChange={onClose}>
+      <SheetContent side='right' className='w-full sm:w-[540px] md:w-[700px] sm:max-w-none overflow-y-auto'>
+        <SheetHeader>
+          <SheetTitle>Draft Offer Letter</SheetTitle>
+        </SheetHeader>
 
-        <div className='text-sm text-muted-foreground space-y-1'>
-          <p className='font-medium text-foreground'>{application.candidateName}</p>
-          <p>{application.email}</p>
-        </div>
-
-        <div className='grid grid-cols-2 gap-3 py-2'>
-          <div className='space-y-2'>
-            <Label htmlFor='job-title'>
-              Job Title <span className='text-destructive'>*</span>
-            </Label>
-            <Input
-              id='job-title'
-              placeholder='e.g., Senior Frontend Engineer'
-              value={formData.jobTitle}
-              onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-            />
+        <div className='space-y-4 mt-4 mx-2 sm:mx-4'>
+          <div className='text-sm text-muted-foreground space-y-1'>
+            <p className='font-medium text-foreground'>{application.candidateName}</p>
+            <p>{application.email}</p>
           </div>
 
-          <div className='space-y-2'>
-            <Label htmlFor='salary'>
-              Annual Salary <span className='text-destructive'>*</span>
-            </Label>
-            <Input
-              id='salary'
-              type='number'
-              placeholder='e.g., 120000'
-              value={formData.salary}
-              onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-            />
-          </div>
+          <OfferLetterForm formData={formData} setFormData={setFormData} errors={errors} setErrors={setErrors} />
 
-          <div className='space-y-2 col-span-2'>
-            <Label htmlFor='start-date'>
-              Start Date <span className='text-destructive'>*</span>
-            </Label>
-            <Input
-              id='start-date'
-              type='date'
-              value={formData.startDate}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              min={new Date().toISOString().split('T')[0]}
-            />
-          </div>
+          <OfferLetterPreview generateOfferLetterText={generateOfferLetterText} />
 
-          <div className='space-y-2 col-span-2'>
-            <Label htmlFor='benefits'>Benefits</Label>
-            <Textarea
-              id='benefits'
-              value={formData.benefits}
-              onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
-              className='min-h-20 text-sm'
-              placeholder='List benefits separated by commas'
-            />
+          <OfferLetterPrint ref={contentRef} generateOfferLetterHTML={generateOfferLetterHTML} />
+
+          <div className='flex flex-col sm:flex-row gap-2 pt-2'>
+            <Button variant='outline' onClick={handleDownload} className='flex-1 gap-2 bg-transparent'>
+              <Download className='h-4 w-4' />
+              Download
+            </Button>
+            <Button variant='outline' onClick={onClose} className='flex-1 bg-transparent'>
+              Cancel
+            </Button>
+            <Button onClick={handleSendOffer} className='flex-1 gap-2 bg-accent hover:bg-accent/90'>
+              <Send className='h-4 w-4' />
+              Send Offer
+            </Button>
           </div>
         </div>
-
-        <div className='space-y-2 pt-2 border-t border-border'>
-          <p className='text-sm font-semibold text-foreground'>Preview</p>
-          <div className='bg-muted/50 rounded p-4 text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-48 overflow-y-auto leading-relaxed'>
-            {generateOfferLetterText()}
-          </div>
-        </div>
-
-        <div className='flex gap-2 pt-2'>
-          <Button variant='outline' onClick={handleDownload} className='flex-1 gap-2 bg-transparent'>
-            <Download className='h-4 w-4' />
-            Download
-          </Button>
-          <Button variant='outline' onClick={onClose} className='flex-1 bg-transparent'>
-            Cancel
-          </Button>
-          <Button onClick={handleSendOffer} className='flex-1 gap-2 bg-accent hover:bg-accent/90'>
-            <Send className='h-4 w-4' />
-            Send Offer
-          </Button>
-        </div>
-      </Card>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }
