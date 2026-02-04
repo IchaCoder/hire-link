@@ -1,4 +1,3 @@
-'use client';
 import { type Application } from '@/contexts';
 import CandidateCard from './CandidateCard';
 

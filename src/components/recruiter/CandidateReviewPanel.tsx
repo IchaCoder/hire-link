@@ -40,8 +40,8 @@ export default function CandidateReviewPanel({ application }: CandidateReviewPan
   return (
     <>
       {showScheduler && <InterviewScheduler application={application} onClose={() => setShowScheduler(false)} />}
-      {showOfferLetter && <OfferLetter application={application} onClose={() => setShowOfferLetter(false)} />}
       <div className='space-y-4'>
+        {showOfferLetter && <OfferLetter application={application} onClose={() => setShowOfferLetter(false)} />}
         <Card className='p-4'>
           <div className='space-y-4'>
             {/* Header */}
