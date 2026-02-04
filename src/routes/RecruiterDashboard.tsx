@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { useHireLinkContext } from '@/contexts';
 import { Card } from '@/components/ui/card';
