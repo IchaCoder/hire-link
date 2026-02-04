@@ -76,6 +76,8 @@ export default function ApplicationForm({ jobId, onBack }: ApplicationFormProps)
       newErrors.phone = 'Phone number is required';
     } else if (!/^[\d\s\-\(\)\+]+$/.test(formData.phone)) {
       newErrors.phone = 'Please enter a valid phone number';
+    } else if (formData.phone.replace(/[\s\-\(\)\+]/g, '').length < 10) {
+      newErrors.phone = 'Phone number must be at least 10 digits';
     }
 
     setErrors(newErrors);
