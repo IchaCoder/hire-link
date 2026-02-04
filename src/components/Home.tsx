@@ -43,7 +43,7 @@ const Home: React.FC = () => {
 
           {/* Mobile Menu Button */}
           <button
-            className='md:hidden p-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors'
+            className='md:hidden p-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer hover:text-white'
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label='Toggle mobile menu'
           >
