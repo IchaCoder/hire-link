@@ -34,9 +34,11 @@ export default function ApplicationSuccess({ applicationId, jobTitle, onBackToJo
 
         <div className='space-y-2 bg-secondary/50 rounded-lg p-4'>
           <p className='text-sm text-muted-foreground'>Your Application ID</p>
-          <div className='flex items-center justify-between gap-2 p-3 bg-background rounded border border-border'>
-            <code className='font-mono font-semibold text-foreground text-lg'>{applicationId}</code>
-            <Button type='button' variant='ghost' size='sm' onClick={copyToClipboard} className='gap-2'>
+          <div className='flex items-center gap-2 p-3 bg-background rounded border border-border'>
+            <code className='font-mono font-semibold text-foreground text-lg flex-1 min-w-0 break-all'>
+              {applicationId}
+            </code>
+            <Button type='button' variant='ghost' size='sm' onClick={copyToClipboard} className='gap-2 flex-shrink-0'>
               <Copy className='h-4 w-4' />
               {copied ? 'Copied!' : 'Copy'}
             </Button>

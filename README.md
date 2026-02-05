@@ -2,6 +2,8 @@
 
 A modern, full-stack recruitment management platform built with React and TypeScript that streamlines the hiring process for both candidates and recruiters.
 
+🔗 **Live Demo**: [https://hirelinks.netlify.app/](https://hirelinks.netlify.app/)
+
 ## Features
 
 ### For Candidates
